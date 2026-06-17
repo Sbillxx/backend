@@ -8,235 +8,281 @@ use App\Models\Anggota;
 use App\Models\Task;
 use App\Models\Evaluation;
 use App\Models\Project;
+use App\Models\ProjectTask;
 use App\Models\SystemNotification;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Default User
-        User::factory()->create([
+        // Disable foreign key constraints to safely truncate
+        Schema::disableForeignKeyConstraints();
+        
+        // Truncate all tables to reset Auto-Increment IDs
+        User::truncate();
+        Anggota::truncate();
+        Divisi::truncate();
+        Task::truncate();
+        Evaluation::truncate();
+        Project::truncate();
+        ProjectTask::truncate();
+        SystemNotification::truncate();
+        
+        Schema::enableForeignKeyConstraints();
+
+        // 1. Create Divisions/Bidang
+        $uix = Divisi::create(['nama' => 'UI/UX Design', 'kode' => 'UIX']);
+        $fed = Divisi::create(['nama' => 'Front-end Development', 'kode' => 'FED']);
+        $bed = Divisi::create(['nama' => 'Back-end Development', 'kode' => 'BED']);
+        $qa = Divisi::create(['nama' => 'Quality Assurance', 'kode' => 'QA']);
+        $qc = Divisi::create(['nama' => 'Quality Control', 'kode' => 'QC']);
+
+        // 2. Create Default Executive User
+        $executiveUser = User::create([
             'name' => 'Kepala',
             'email' => 'executive@kominfo.go.id',
-            'profile_image' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDjPYthawamKptO2svXYC5fv264uFWWqQl9In0-GIhvdJMYbhV91YV9oAn2yg7r43B96sIFx5ecN_i4KNfN2pysyEnFB3xtlQ8-fQLACG6d-HN-MC_1CZkmrqyplTuoFpHs2qIu4ZyYphrM8yyKitoUygP9PlXww_CrNTgeIqyjop4D1BP74xVjeeWioLaIC1vtzYb7yHgXD5LuDqTH00v1sHmVKNKIYYwjyZtXmz-3munyX0ZhkPP5KF1IoscqtqdI7EGTUN1IlIyy',
-            'password' => 'password123', // auto-hashed by cast
+            'password' => 'password123', // auto-hashed by User model cast
         ]);
+        
+        // Delete the automatically created Anggota for Kepala to keep him out of the staff list
+        Anggota::where('user_id', $executiveUser->id)->delete();
 
-        // 2. Seed Divisis
-        $eng = Divisi::create(['nama' => 'Engineering', 'kode' => 'ENG']);
-        $dsn = Divisi::create(['nama' => 'Design', 'kode' => 'DSN']);
-        $ops = Divisi::create(['nama' => 'Operations', 'kode' => 'OPS']);
-        $mkt = Divisi::create(['nama' => 'Marketing', 'kode' => 'MKT']);
+        // 3. Create Staff Users & Anggotas (7 Staff with Sundanese Names)
+        $staffData = [
+            [
+                'name' => 'Encep Sunandar',
+                'email' => 'encep@gmail.com',
+                'role' => 'Lead UI/UX Designer',
+                'divisi_id' => $uix->id,
+                'avatar' => 'https://ui-avatars.com/api/?name=Encep+Sunandar&background=0D8ABC&color=fff',
+            ],
+            [
+                'name' => 'Cecep Supriadi',
+                'email' => 'cecep@gmail.com',
+                'role' => 'Senior Front-end Developer',
+                'divisi_id' => $fed->id,
+                'avatar' => 'https://ui-avatars.com/api/?name=Cecep+Supriadi&background=F39C12&color=fff',
+            ],
+            [
+                'name' => 'Asep Kurniawan',
+                'email' => 'asep@gmail.com',
+                'role' => 'Front-end Developer',
+                'divisi_id' => $fed->id,
+                'avatar' => 'https://ui-avatars.com/api/?name=Asep+Kurniawan&background=2ECC71&color=fff',
+            ],
+            [
+                'name' => 'Ujang Mulyana',
+                'email' => 'ujang@gmail.com',
+                'role' => 'Lead Back-end Developer',
+                'divisi_id' => $bed->id,
+                'avatar' => 'https://ui-avatars.com/api/?name=Ujang+Mulyana&background=9B59B6&color=fff',
+            ],
+            [
+                'name' => 'Dadang Hermawan',
+                'email' => 'dadang@gmail.com',
+                'role' => 'Back-end Developer',
+                'divisi_id' => $bed->id,
+                'avatar' => 'https://ui-avatars.com/api/?name=Dadang+Hermawan&background=34495E&color=fff',
+            ],
+            [
+                'name' => 'Neng Rohayati',
+                'email' => 'neng@gmail.com',
+                'role' => 'QA Engineer',
+                'divisi_id' => $qa->id,
+                'avatar' => 'https://ui-avatars.com/api/?name=Neng+Rohayati&background=E74C3C&color=fff',
+            ],
+            [
+                'name' => 'Euis Dahlia',
+                'email' => 'euis@gmail.com',
+                'role' => 'QC Inspector',
+                'divisi_id' => $qc->id,
+                'avatar' => 'https://ui-avatars.com/api/?name=Euis+Dahlia&background=1ABC9C&color=fff',
+            ],
+        ];
 
-        // 3. Seed Anggotas (Staff)
-        $sarah = Anggota::create([
-            'divisi_id' => $eng->id,
-            'nama' => 'Sarah Chen',
-            'jabatan' => 'Lead Software Engineer',
-            'foto' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDqWmAZ9YvCMMO733lcISL8wMnAyolrfiQZj6fLsbJsol-Jw0ezOu0UIK7xxUW5Dj2tRbfuYcPkRxh2ddGbYjA2BOmhfuLSgOCMaA9IaPjSUd1LwjCgUQZ3VZexLq80xSJoOEJGSWqPHDXOGz9AyR1gjxo6lUbROYkzPh9G1HOhTsPNOiV8k02UgoNKeFTsog2ctK2vkN5TmWWI3TKrtSCiHwwAHGJVn0HXhX9L0a4eGx7Tqw6ZM_8kTEa32HHYRG21yECfiSk__PKm',
-            'status' => 'NORMAL',
-            'workload_percentage' => 65,
-            'total_tasks' => 12,
-            'active_tasks_count' => 3,
-            'reliability' => 98.4,
-            'weekly_output' => 24,
-        ]);
+        $anggotas = [];
+        foreach ($staffData as $data) {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => 'password123',
+            ]);
 
-        $marcus = Anggota::create([
-            'divisi_id' => $ops->id,
-            'nama' => 'Marcus Wright',
-            'jabatan' => 'Operations Manager',
-            'foto' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXGIUJY6ngEMdJ3nstXT0GnBoR-peJFwwBvbqBfL_AYICMvxXMZfA685S2Hn6uqUHLaYmwp2xMt2k7-XEHEQFbnPQ_FCg9Kd6N1QcQq7tKPYlQaLmA_yhvpy3bu4ZA0UZTHIpcxNdW0DotC9UVbvMMhOXdQDUdFPECO_3VzAmr8v1JY5nFHNGf5n_6oTf5UNshSXZqulsCqc1raQE52dVC1t5Zoo78i9LwVSnac8_oEZUvu6PMB6piQuN9eATNxSQpYdODT8jYINzg',
-            'status' => 'HIGH',
-            'workload_percentage' => 85,
-            'total_tasks' => 18,
-            'active_tasks_count' => 7,
-            'reliability' => 91.2,
-            'weekly_output' => 19,
-        ]);
-
-        $elena = Anggota::create([
-            'divisi_id' => $eng->id,
-            'nama' => 'Elena Rodriguez',
-            'jabatan' => 'Senior DevOps Specialist',
-            'foto' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDrjxus22Vj_IuZzrZPIKnVoPypSi0zugFGVi4e4i43Ky8vnzeLyque-t7XnmSk29bQKn_u60Xlkqf3Hf1diSH8YmQf_y-gtkE8kYsYs-rIA2pD9uczo8LoA0wp_ExA2DTq9fuvjinorzB5UpBC4L4m3Y3U9T-Ik3EupczR2U8B32gDx4dShlAQ4GEjh40AA9GxEDhEbZ0oD7SOeqqXNWJ6D0yvw9fzAwHUNYkRrKTl0mAsm1tQ_gf8g1YD1wsv_VNvzxyT25tRpPtZ',
-            'status' => 'AT RISK',
-            'workload_percentage' => 92,
-            'total_tasks' => 22,
-            'active_tasks_count' => 9,
-            'reliability' => 84.7,
-            'weekly_output' => 15,
-        ]);
-
-        $david = Anggota::create([
-            'divisi_id' => $dsn->id,
-            'nama' => 'David Kim',
-            'jabatan' => 'Lead UI/UX Designer',
-            'foto' => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDjPYthawamKptO2svXYC5fv264uFWWqQl9In0-GIhvdJMYbhV91YV9oAn2yg7r43B96sIFx5ecN_i4KNfN2pysyEnFB3xtlQ8-fQLACG6d-HN-MC_1CZkmrqyplTuoFpHs2qIu4ZyYphrM8yyKitoUygP9PlXww_CrNTgeIqyjop4D1BP74xVjeeWioLaIC1vtzYb7yHgXD5LuDqTH00v1sHmVKNKIYYwjyZtXmz-3munyX0ZhkPP5KF1IoscqtqdI7EGTUN1IlIyy',
-            'status' => 'NORMAL',
-            'workload_percentage' => 50,
-            'total_tasks' => 8,
-            'active_tasks_count' => 2,
-            'reliability' => 96.8,
-            'weekly_output' => 28,
-        ]);
-
-        // 4. Seed Tasks
-        Task::create([
-            'anggota_id' => $sarah->id,
-            'title' => 'Audit Keuangan Q3',
-            'description' => 'Menyelesaikan audit kepatuhan pengeluaran anggaran Kominfo Triwulan 3.',
-            'due_date' => '30 Jun 2026',
-            'status' => 'ACTIVE'
-        ]);
-        Task::create([
-            'anggota_id' => $sarah->id,
-            'title' => 'Refactoring API Gateway',
-            'description' => 'Optimasi rute backend untuk meningkatkan kecepatan respon server dasbor.',
-            'due_date' => '15 Jul 2026',
-            'status' => 'ACTIVE'
-        ]);
-        Task::create([
-            'anggota_id' => $sarah->id,
-            'title' => 'Integrasi Modul GPS - Stitch Tracker',
-            'description' => 'Penyelarasan koordinat satelit ke API Flutter.',
-            'due_date' => '10 Mei 2026',
-            'status' => 'COMPLETED'
-        ]);
-
-        Task::create([
-            'anggota_id' => $marcus->id,
-            'title' => 'Evaluasi Keandalan Sistem',
-            'description' => 'Mengevaluasi laporan kestabilan sistem cloud dan performa server PKL.',
-            'due_date' => '25 Jun 2026',
-            'status' => 'ACTIVE'
-        ]);
-        Task::create([
-            'anggota_id' => $marcus->id,
-            'title' => 'Rapat Koordinasi Vendor',
-            'description' => 'Sinkronisasi tenggat waktu pengadaan perangkat keras server.',
-            'due_date' => '05 Jun 2026',
-            'status' => 'ACTIVE'
-        ]);
-
-        Task::create([
-            'anggota_id' => $elena->id,
-            'title' => 'Kubernetes Pod Recovery',
-            'description' => 'Mengatasi kegagalan pod replikasi database secara berkala.',
-            'due_date' => '01 Jun 2026',
-            'status' => 'ACTIVE'
-        ]);
-
-        Task::create([
-            'anggota_id' => $david->id,
-            'title' => 'Desain Layout Mobile Dashboard',
-            'description' => 'Menyusun wireframe and UI kit bertema Slate/Navy premium.',
-            'due_date' => '18 Jun 2026',
-            'status' => 'ACTIVE'
-        ]);
+            // Find auto-created Anggota (via User booted event) and update details
+            $anggota = Anggota::where('user_id', $user->id)->first();
+            $anggota->update([
+                'divisi_id' => $data['divisi_id'],
+                'jabatan' => $data['role'],
+                'foto' => $data['avatar'],
+                'reliability' => 95.0,
+            ]);
+            
+            $anggotas[$data['name']] = $anggota;
+        }
 
         // 5. Seed Evaluations
         Evaluation::create([
-            'anggota_id' => $sarah->id,
-            'note' => 'Menunjukkan kinerja luar biasa dalam memimpin arsitektur clean-code.',
-            'date' => '21 Mei 2026',
-            'rating' => 5.0
-        ]);
-        Evaluation::create([
-            'anggota_id' => $sarah->id,
-            'note' => 'Penyelesaian integrasi modul GPS sangat rapi dan terdokumentasi dengan baik.',
+            'anggota_id' => $anggotas['Encep Sunandar']->id,
+            'note' => 'Hasil rancangan UI/UX sangat premium dan rapi.',
             'date' => '12 Mei 2026',
             'rating' => 4.8
         ]);
-
         Evaluation::create([
-            'anggota_id' => $marcus->id,
-            'note' => 'Beban kerja manajemen operasi mendekati kapasitas kritis, diperlukan asisten pendukung.',
+            'anggota_id' => $anggotas['Ujang Mulyana']->id,
+            'note' => 'Stabilitas backend API dipertahankan dengan sangat baik.',
             'date' => '18 Mei 2026',
-            'rating' => 4.2
+            'rating' => 4.5
         ]);
 
-        Evaluation::create([
-            'anggota_id' => $elena->id,
-            'note' => 'Keterlambatan penyelesaian pod recovery dikarenakan kendala infrastruktur AWS.',
-            'date' => '10 Mei 2026',
-            'rating' => 3.8
-        ]);
-
-        // 6. Seed Projects
-        Project::create([
+        // 6. Seed Projects (5 Projects total as requested)
+        $proj1 = Project::create([
             'name' => 'Stitch Location Tracker',
-            'description' => 'Aplikasi pemantauan koordinat GPS and log aktivitas lapangan tim operasional.',
+            'description' => 'Aplikasi pemantauan koordinat GPS and log aktivitas lapangan.',
             'target_date' => '15 Jun 2026',
-            'progress' => 0.85,
+            'progress' => 85,
             'workload' => 'NORMAL',
-            'divisi_id' => $eng->id,
-            'assigned_staff' => json_encode(['Sarah Chen', 'Elena Rodriguez'])
+            'divisi_id' => $bed->id,
+            'assigned_staff' => json_encode(['Ujang Mulyana', 'Dadang Hermawan']),
+            'user_id' => $executiveUser->id,
         ]);
-        Project::create([
+        
+        $proj2 = Project::create([
             'name' => 'Halal Certificate Hub',
-            'description' => 'Sistem automasi pengajuan sertifikat halal terintegrasi kementerian.',
+            'description' => 'Sistem pengajuan sertifikat halal terintegrasi kementerian.',
             'target_date' => '25 Jul 2026',
-            'progress' => 0.45,
+            'progress' => 45,
             'workload' => 'HIGH',
-            'divisi_id' => $eng->id,
-            'assigned_staff' => json_encode(['Sarah Chen'])
+            'divisi_id' => $fed->id,
+            'assigned_staff' => json_encode(['Cecep Supriadi', 'Asep Kurniawan']),
+            'user_id' => $executiveUser->id,
         ]);
-        Project::create([
-            'name' => 'Inspektorat Dashboard',
-            'description' => 'Visualisasi performa and audit komprehensif berbasis Flutter mobile.',
+
+        $proj3 = Project::create([
+            'name' => 'Audit Desain Q3',
+            'description' => 'Visualisasi performa and audit komprehensif eksekutif.',
             'target_date' => '10 Jun 2026',
-            'progress' => 0.95,
+            'progress' => 100,
             'workload' => 'NORMAL',
-            'divisi_id' => $dsn->id,
-            'assigned_staff' => json_encode(['David Kim'])
+            'divisi_id' => $uix->id,
+            'assigned_staff' => json_encode(['Encep Sunandar']),
+            'user_id' => $executiveUser->id,
         ]);
-        Project::create([
+
+        $proj4 = Project::create([
             'name' => 'SAKIP Analytics',
             'description' => 'Analisis data kepatuhan kinerja instansi pemerintah secara berkala.',
             'target_date' => '30 Jun 2026',
-            'progress' => 0.25,
+            'progress' => 25,
             'workload' => 'AT RISK',
-            'divisi_id' => $ops->id,
-            'assigned_staff' => json_encode(['Marcus Wright'])
+            'divisi_id' => $qa->id,
+            'assigned_staff' => json_encode(['Neng Rohayati']),
+            'user_id' => $executiveUser->id,
         ]);
 
-        // 7. Seed System Notifications
+        $proj5 = Project::create([
+            'name' => 'e-OPD Smart System',
+            'description' => 'Integrasi sistem pelaporan kinerja OPD tingkat kabupaten.',
+            'target_date' => '15 Jul 2026',
+            'progress' => 60,
+            'workload' => 'NORMAL',
+            'divisi_id' => $qc->id,
+            'assigned_staff' => json_encode(['Euis Dahlia']),
+            'user_id' => $executiveUser->id,
+        ]);
+
+        // Sync to pivot table
+        $proj1->assignedUsers()->sync([$anggotas['Ujang Mulyana']->user_id, $anggotas['Dadang Hermawan']->user_id]);
+        $proj2->assignedUsers()->sync([$anggotas['Cecep Supriadi']->user_id, $anggotas['Asep Kurniawan']->user_id]);
+        $proj3->assignedUsers()->sync([$anggotas['Encep Sunandar']->user_id]);
+        $proj4->assignedUsers()->sync([$anggotas['Neng Rohayati']->user_id]);
+        $proj5->assignedUsers()->sync([$anggotas['Euis Dahlia']->user_id]);
+
+        // 7. Seed Project Tasks
+        // Project 1 (Stitch Location Tracker) tasks
+        ProjectTask::create([
+            'project_id' => $proj1->id,
+            'title' => 'Integrasi API Mapbox',
+            'description' => 'Menghubungkan endpoint GPS.',
+            'status' => 'completed',
+            'priority' => 'high',
+            'assigned_to' => $anggotas['Ujang Mulyana']->user_id,
+        ]);
+        ProjectTask::create([
+            'project_id' => $proj1->id,
+            'title' => 'Setup Database Relasional Spasial',
+            'description' => 'Optimasi PostgreSQL PostGIS.',
+            'status' => 'completed',
+            'priority' => 'medium',
+            'assigned_to' => $anggotas['Dadang Hermawan']->user_id,
+        ]);
+
+        // Project 2 (Halal Certificate Hub) tasks
+        ProjectTask::create([
+            'project_id' => $proj2->id,
+            'title' => 'Responsive Dashboard Layout',
+            'description' => 'Penyesuaian UI tablet.',
+            'status' => 'in_progress',
+            'priority' => 'medium',
+            'assigned_to' => $anggotas['Cecep Supriadi']->user_id,
+        ]);
+        ProjectTask::create([
+            'project_id' => $proj2->id,
+            'title' => 'Integrasi Auth JWT',
+            'description' => 'Keamanan login multi-role.',
+            'status' => 'completed',
+            'priority' => 'high',
+            'assigned_to' => $anggotas['Asep Kurniawan']->user_id,
+        ]);
+
+        // Project 4 (SAKIP Analytics) tasks
+        ProjectTask::create([
+            'project_id' => $proj4->id,
+            'title' => 'Review Dokumen SAKIP 2025',
+            'description' => 'Melakukan review kelayakan dokumen kepatuhan SAKIP tahun lalu.',
+            'status' => 'completed',
+            'priority' => 'medium',
+            'assigned_to' => $anggotas['Neng Rohayati']->user_id,
+        ]);
+        ProjectTask::create([
+            'project_id' => $proj4->id,
+            'title' => 'Automasi Integrasi Data Pemda',
+            'description' => 'Pengambilan data otomatis dari server instansi Pemda.',
+            'status' => 'in_progress',
+            'priority' => 'high',
+            'assigned_to' => $anggotas['Neng Rohayati']->user_id,
+        ]);
+
+        // Project 5 (e-OPD Smart System) tasks
+        ProjectTask::create([
+            'project_id' => $proj5->id,
+            'title' => 'Penyusunan Standard Operating Procedure (SOP)',
+            'description' => 'Menyusun dokumen SOP penginputan data laporan kerja OPD.',
+            'status' => 'completed',
+            'priority' => 'medium',
+            'assigned_to' => $anggotas['Euis Dahlia']->user_id,
+        ]);
+        ProjectTask::create([
+            'project_id' => $proj5->id,
+            'title' => 'Uji Coba Sistem Terpadu',
+            'description' => 'Pengujian performa sistem di tingkat server lokal.',
+            'status' => 'in_progress',
+            'priority' => 'low',
+            'assigned_to' => $anggotas['Euis Dahlia']->user_id,
+        ]);
+
+        // 8. Seed System Notifications
         SystemNotification::create([
-            'title' => 'Sarah Chen menyelesaikan tugas Q3 Financial Audit',
-            'description' => 'Audit diselesaikan dengan akurasi 98.4% dan diserahkan tepat waktu.',
+            'title' => 'Encep Sunandar menyelesaikan proyek Audit Desain Q3',
+            'description' => 'Proyek diselesaikan dengan presisi tinggi.',
             'time_ago' => '10 menit yang lalu',
-            'type' => 'task',
-            'color' => '#10B981', // green
-            'is_read' => false
-        ]);
-        SystemNotification::create([
-            'title' => 'Peringatan Kapasitas Kerja: Marcus Wright',
-            'description' => 'Beban kerja harian mencapai 85% dengan 7 tugas aktif. Tindakan disarankan.',
-            'time_ago' => '42 menit yang lalu',
-            'type' => 'warning',
-            'color' => '#F59E0B', // amber
-            'is_read' => false
-        ]);
-        SystemNotification::create([
-            'title' => 'Kritikal: Elena Rodriguez (AT RISK)',
-            'description' => 'Keterlambatan penyelesaian pada 3 tugas strategis. Segera hubungi divisi Ops.',
-            'time_ago' => '2 jam yang lalu',
-            'type' => 'error',
-            'color' => '#EF4444', // red
-            'is_read' => false
-        ]);
-        SystemNotification::create([
-            'title' => 'Dasbor Proyek: Stitch Location Tracker',
-            'description' => 'Progres keseluruhan naik menjadi 85% menyusul rilis modul sinkronisasi GPS.',
-            'time_ago' => '5 jam yang lalu',
-            'type' => 'info',
-            'color' => '#3B82F6', // blue
-            'is_read' => false
+            'type' => 'project',
+            'color' => '#10B981',
+            'is_read' => false,
         ]);
 
-        // Recalculate workload for all staff after seeding
+        // Recalculate workload and task counts for all staff
         foreach (Anggota::all() as $anggota) {
             $anggota->recalculateWorkload();
         }

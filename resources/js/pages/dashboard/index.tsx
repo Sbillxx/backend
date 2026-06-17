@@ -301,22 +301,6 @@ export default function DashboardIndex({
                     </div>
                   </div>
                 )}
-
-                {/* Enhanced Legend */}
-                <div className="grid grid-cols-1 gap-3 mt-4">
-                  {pieChartData.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-gray-50">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: PIE_COLORS[index] }}
-                        />
-                        <span className="text-sm font-medium">{item.name}</span>
-                      </div>
-                      <span className="text-sm font-bold">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
               </CardContent>
             </Card>
 

@@ -106,10 +106,13 @@ export default function ProjectsIndex({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const page = usePage()
 
-  const handleFilter = () => {
+  const handleFilter = (customSearch?: string, customStatus?: string) => {
+    const activeSearch = customSearch !== undefined ? customSearch : search;
+    const activeStatus = customStatus !== undefined ? customStatus : selectedStatus;
+
     router.get(route('dashboard.projects.index'), {
-      search: search || undefined,
-      status: selectedStatus && selectedStatus !== 'all' ? selectedStatus : undefined,
+      search: activeSearch || undefined,
+      status: activeStatus && activeStatus !== 'all' ? activeStatus : undefined,
     }, {
       preserveState: true,
       replace: true,
@@ -217,10 +220,6 @@ export default function ProjectsIndex({
               <span className="text-sm text-gray-600">{project.progress_percentage}%</span>
             </div>
             <Progress value={project.progress_percentage} className="h-2" />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>{project.completed_tasks_count} / {project.tasks_count} tasks</span>
-              <span>{project.tasks_count - project.completed_tasks_count} remaining</span>
-            </div>
           </div>
 
           {/* Due Date */}
@@ -356,13 +355,24 @@ export default function ProjectsIndex({
                     placeholder="Search projects..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleFilter();
+                      }
+                    }}
                     className="pl-10"
                   />
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <IconFilter className="h-4 w-4 text-gray-500" />
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <Select
+                  value={selectedStatus}
+                  onValueChange={(value) => {
+                    setSelectedStatus(value);
+                    handleFilter(search, value);
+                  }}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -374,7 +384,7 @@ export default function ProjectsIndex({
                     <SelectItem value="on_hold">On Hold</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button onClick={handleFilter} variant="outline">
+                <Button onClick={() => handleFilter()} variant="outline">
                   Apply
                 </Button>
                 {(search || selectedStatus !== 'all') && (

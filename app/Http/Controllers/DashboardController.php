@@ -54,11 +54,22 @@ class DashboardController extends Controller
             // Filter berdasarkan active team
             $projectsQuery->where('team_id', $activeTeam->id);
         } else if (!$user->isAdmin()) {
-            // Jika tidak ada active team dan user bukan admin, filter berdasarkan teams yang diikuti user
+            // Jika tidak ada active team dan user bukan admin, filter berdasarkan kepemilikan, penugasan, atau tim
             $userTeamIds = $user->teams->pluck('id')->toArray();
-            if (!empty($userTeamIds)) {
-                $projectsQuery->whereIn('team_id', $userTeamIds);
-            }
+            
+            $projectsQuery->where(function($q) use ($user, $userTeamIds) {
+                // User sebagai owner
+                $q->where('user_id', $user->id)
+                  // User sebagai assigned user
+                  ->orWhereHas('assignedUsers', function($q2) use ($user) {
+                      $q2->where('users.id', $user->id);
+                  });
+                  
+                // Project di team user
+                if (!empty($userTeamIds)) {
+                    $q->orWhereIn('team_id', $userTeamIds);
+                }
+            });
         }
 
         $projects = $projectsQuery->get()

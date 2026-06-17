@@ -76,14 +76,9 @@ class Project extends Model
         return $query->where('team_id', $teamId);
     }
 
-    // Progress calculation methods
     public function getProgressPercentageAttribute()
     {
-        $totalTasks = $this->tasks()->count();
-        if ($totalTasks === 0) return 0;
-
-        $completedTasks = $this->tasks()->where('status', 'completed')->count();
-        return round(($completedTasks / $totalTasks) * 100);
+        return $this->progress ?? 0;
     }
 
     public function getCompletedTasksCountAttribute()

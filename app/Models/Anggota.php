@@ -34,10 +34,24 @@ class Anggota extends Model
         // 1. Get all projects where this staff is assigned
         $projects = Project::where('assigned_staff', 'like', '%"' . $this->nama . '"%')->get();
         
-        // 2. Count active tasks
-        $activeTasks = $this->tasks()->where('status', 'ACTIVE')->count();
+        // 2. Count personal tasks
+        $personalCount = $this->tasks()->count();
+        $personalActive = $this->tasks()->where('status', 'ACTIVE')->count();
         
-        // 3. Calculate average project progress:
+        // 3. Count project tasks (using user_id)
+        $projectCount = 0;
+        $projectActive = 0;
+        
+        if ($this->user_id) {
+            $projectCount = ProjectTask::where('assigned_to', $this->user_id)->count();
+            $projectActive = ProjectTask::where('assigned_to', $this->user_id)->where('status', '!=', 'completed')->count();
+        }
+        
+        // 4. Update total and active counts in DB
+        $this->total_tasks = $personalCount + $projectCount;
+        $this->active_tasks_count = $personalActive + $projectActive;
+        
+        // 5. Calculate average project progress
         if ($projects->isNotEmpty()) {
             $averageProgress = $projects->avg('progress');
             $percentage = round($averageProgress);
@@ -48,17 +62,27 @@ class Anggota extends Model
         // Keep it between 0% and 100%
         $this->workload_percentage = max(0, min(100, $percentage));
         
-        // Calculate weekly output: completed tasks in the last 7 days
-        $weeklyOutput = $this->tasks()
+        // Calculate weekly output: completed tasks in the last 7 days (personal + project tasks)
+        $weeklyPersonalCompleted = $this->tasks()
             ->where('status', 'COMPLETED')
             ->where('updated_at', '>=', now()->subDays(7))
             ->count();
-        $this->weekly_output = $weeklyOutput;
+            
+        $weeklyProjectCompleted = 0;
+        if ($this->user_id) {
+            $weeklyProjectCompleted = ProjectTask::where('assigned_to', $this->user_id)
+                ->where('status', 'completed')
+                ->where('updated_at', '>=', now()->subDays(7))
+                ->count();
+        }
         
-        // 4. Update status based on active tasks (workload risk)
-        if ($activeTasks >= 6) {
+        $this->weekly_output = $weeklyPersonalCompleted + $weeklyProjectCompleted;
+        
+        // 6. Update status based on total active tasks (workload risk)
+        $totalActive = $this->active_tasks_count;
+        if ($totalActive >= 6) {
             $this->status = 'AT RISK';
-        } elseif ($activeTasks >= 4) {
+        } elseif ($totalActive >= 4) {
             $this->status = 'HIGH';
         } else {
             $this->status = 'NORMAL';

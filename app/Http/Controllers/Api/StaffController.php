@@ -70,7 +70,7 @@ class StaffController extends Controller
             ], 404);
         }
 
-        $activeTasksFromDb = $anggota->tasks()->where('status', 'ACTIVE')->orderBy('created_at', 'desc')->get()->map(function ($task) {
+        $activeTasksFromDb = $anggota->tasks()->where('status', 'ACTIVE')->orderBy('created_at', 'desc')->get()->toBase()->map(function ($task) {
             return [
                 'id' => $task->id,
                 'title' => $task->title,
@@ -85,6 +85,7 @@ class StaffController extends Controller
             ->where('progress', '<', 100)
             ->orderBy('created_at', 'desc')
             ->get()
+            ->toBase()
             ->map(function ($proj) {
                 return [
                     'id' => $proj->id + 10000, // Offset to avoid ID collision
@@ -98,7 +99,22 @@ class StaffController extends Controller
 
         $activeTasks = $activeProjects->merge($activeTasksFromDb);
 
-        $completedTasks = $anggota->tasks()->where('status', 'COMPLETED')->orderBy('updated_at', 'desc')->get()->map(function ($task) {
+        $completedProjects = \App\Models\Project::where('assigned_staff', 'like', '%"'.$anggota->nama.'"%')
+            ->where('progress', '>=', 100)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->toBase()
+            ->map(function ($proj) {
+                return [
+                    'id' => $proj->id + 10000, // Offset to avoid ID collision
+                    'title' => $proj->name,
+                    'description' => 'Proyek: ' . ($proj->description ?? ''),
+                    'dueDate' => $proj->target_date ?? 'Belum ditentukan',
+                    'status' => 'COMPLETED',
+                ];
+            });
+
+        $completedTasksFromDb = $anggota->tasks()->where('status', 'COMPLETED')->orderBy('updated_at', 'desc')->get()->toBase()->map(function ($task) {
             return [
                 'id' => $task->id,
                 'title' => $task->title,
@@ -107,6 +123,8 @@ class StaffController extends Controller
                 'status' => $task->status,
             ];
         });
+
+        $completedTasks = $completedProjects->merge($completedTasksFromDb);
 
         $evaluations = $anggota->evaluations()->orderBy('created_at', 'desc')->get()->map(function ($eval) {
             return [
