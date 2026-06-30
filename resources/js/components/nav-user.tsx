@@ -82,30 +82,19 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator/>
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles/>
-                Upgrade to Pro
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href='/dashboard/settings'>
+                  <BadgeCheck />
+                  <span>Profil Saya</span>
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator/>
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck/>
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard/>
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell/>
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator/>
-            <DropdownMenuItem>
-              <LogOut/>
-              <Link href={route('logout')} method="post" as="button">Log out</Link>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link className="flex w-full items-center gap-2" href={route('logout')} method="post" as="button">
+                <LogOut className="size-4" />
+                <span>Keluar</span>
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

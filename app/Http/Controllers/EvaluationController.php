@@ -14,8 +14,16 @@ class EvaluationController extends Controller
      */
     public function index(): Response
     {
-        $evaluations = Evaluation::with(['anggota.divisi'])
-            ->orderBy('created_at', 'desc')
+        $user = auth()->user();
+        $query = Evaluation::with(['anggota.divisi']);
+
+        // Filter evaluations if the logged-in user is a staff member
+        $anggota = \App\Models\Anggota::where('user_id', $user->id)->first();
+        if ($anggota) {
+            $query->where('anggota_id', $anggota->id);
+        }
+
+        $evaluations = $query->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($eval) {
                 return [

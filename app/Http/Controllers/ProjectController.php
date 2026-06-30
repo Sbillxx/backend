@@ -42,12 +42,8 @@ class ProjectController extends Controller
             }]);
 
         // Apply status filter
-        if ($status) {
-            if ($status === 'in_progress') {
-                $projectsQuery->where('status', 'in_progress');
-            } elseif ($status === 'completed') {
-                $projectsQuery->where('status', 'completed');
-            }
+        if ($status && in_array($status, ['planning', 'in_progress', 'completed', 'on_hold'])) {
+            $projectsQuery->where('status', $status);
         }
 
         // Apply search filter
