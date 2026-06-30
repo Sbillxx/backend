@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /node_modules
 /vendor
 /.git
@@ -5,3 +6,7 @@
 /storage/framework
 /storage/logs
 
+=======
+/vendor
+/node_modules
+>>>>>>> 1590130aa88da3ee0a99c14e1c9ed8371c010d42

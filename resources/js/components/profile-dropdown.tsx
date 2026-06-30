@@ -35,7 +35,7 @@ const getAvatarUrl = (user?: User) => {
 }
 
 export function ProfileDropdown() {
-  const {auth} = usePage<PageProps>().props
+  const {auth} = usePage<any>().props
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>

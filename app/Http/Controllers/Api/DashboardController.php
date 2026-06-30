@@ -124,7 +124,6 @@ class DashboardController extends Controller
         // 3. Top Performers (Staff with reliability >= 90%)
         $topPerformers = Anggota::with('divisi')
             ->orderBy('reliability', 'desc')
-            ->take(5)
             ->get()
             ->map(function ($anggota) {
                 return [

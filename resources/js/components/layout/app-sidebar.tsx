@@ -4,10 +4,12 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from '@/components/ui/sidebar'
 import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
-import { TeamSwitcher } from '@/components/layout/team-switcher'
 import { type SidebarData, type NavGroup as NavGroupType } from './types'
 import { Building2 } from 'lucide-react'
 
@@ -21,7 +23,6 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
 
   // Safety checks untuk memastikan data tersedia
   if (!data) {
-    console.warn('❌ AppSidebar: data prop is undefined')
     return (
       <Sidebar collapsible='icon' variant='floating' {...props}>
         <SidebarHeader>
@@ -44,21 +45,19 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>
       <SidebarHeader>
-        <TeamSwitcher
-          teams={data.teams || []}
-          currentTeam={
-            // Use active_team from page props instead of user.team
-            data.active_team
-              ? {
-                  name: data.active_team.name,
-                  logo: Building2,
-                  plan: data.active_team.plan || 'Team',
-                  id: data.active_team.id,
-                }
-              : undefined // Change from null to undefined
-          }
-          canCreateTeam={data.user?.role === 'admin'}
-        />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" className="cursor-default hover:bg-transparent select-none">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Building2 className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold text-slate-800 dark:text-slate-100">Dasbor Eksekutif</span>
+                <span className="truncate text-xs text-muted-foreground">Kominfo</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         {(data.navGroups || []).map((groupProps: NavGroupType) => (
