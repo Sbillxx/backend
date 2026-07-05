@@ -11,4 +11,6 @@ $_ENV['VIEW_COMPILED_PATH'] = '/tmp';
 $_ENV['CACHE_STORE'] = 'array';
 $_ENV['SESSION_DRIVER'] = 'cookie';
 
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 require __DIR__ . '/../public/index.php';
