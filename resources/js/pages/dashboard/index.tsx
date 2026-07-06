@@ -67,8 +67,9 @@ interface Props {
   recent_projects?: Project[];
   urgent_projects?: Project[];
   status_chart_data?: any[];
-  opd_chart_data?: any[];
-  projects_by_opd?: any[];
+  team_chart_data?: any[];
+  trending_chart_data?: any[];
+  projects_by_team?: any[];
 }
 
 export default function DashboardIndex({
@@ -76,8 +77,9 @@ export default function DashboardIndex({
                                          recent_projects = [],
                                          urgent_projects = [],
                                          status_chart_data = [],
-                                         opd_chart_data = [],
-                                         projects_by_opd = []
+                                         team_chart_data = [],
+                                         trending_chart_data = [],
+                                         projects_by_team = []
                                        }: Props) {
 
   const statusColors = {
@@ -98,21 +100,13 @@ export default function DashboardIndex({
     color: PIE_COLORS[index] || '#6b7280'
   }));
 
-  const opdProgressData = opd_chart_data.slice(0, 6).map(opd => ({
-    name: opd.name?.substring(0, 12) + (opd.name?.length > 12 ? '...' : '') || 'Tidak Diketahui',
+  const opdProgressData = team_chart_data.slice(0, 6).map(opd => ({
+    name: opd.name?.substring(0, 15) + (opd.name?.length > 15 ? '...' : '') || 'Tidak Diketahui',
     progress: opd.progress || 0,
     projects: opd.total_projects || 0
   }));
 
-  // Mock data for trending chart
-  const trendingData = [
-    { month: 'Jan', completed: 4, in_progress: 8 },
-    { month: 'Feb', completed: 6, in_progress: 12 },
-    { month: 'Mar', completed: 8, in_progress: 15 },
-    { month: 'Apr', completed: 12, in_progress: 18 },
-    { month: 'Mei', completed: 16, in_progress: 20 },
-    { month: 'Jun', completed: 20, in_progress: 22 },
-  ];
+  const trendingData = trending_chart_data;
 
   // Custom label for pie chart
   const renderCustomizedLabel = ({
@@ -170,7 +164,7 @@ export default function DashboardIndex({
                     </div>
                     <div className="flex items-center space-x-2">
                       <Users className="h-4 w-4" />
-                      <span>{projects_by_opd?.length || 0} Departemen</span>
+                      <span>{projects_by_team?.length || 0} Departemen</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="h-4 w-4" />
@@ -287,7 +281,7 @@ export default function DashboardIndex({
                           ))}
                         </Pie>
                         <Tooltip
-                          formatter={(value) => [`${value} proyek`, 'Total']}
+                          formatter={(value, name) => [`${value} proyek`, name]}
                           contentStyle={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}
                         />
                       </RechartsPieChart>

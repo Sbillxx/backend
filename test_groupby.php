@@ -1,0 +1,1 @@
+<?php require 'vendor/autoload.php'; \ = require_once 'bootstrap/app.php'; \->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); \ = App\Models\Project::with('divisi')->get(); \ = \->groupBy('divisi.nama'); echo json_encode(array_keys(\->toArray()));

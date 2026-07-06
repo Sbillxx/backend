@@ -34,9 +34,19 @@ class ProjectTaskController extends Controller
             'assigned_to' => auth()->id(), // Track who logged this
         ]);
 
-        // Update the overall project's progress
+        $newStatus = $project->status;
+        if ($validated['progress'] == 100) {
+            $newStatus = 'completed';
+        } elseif ($validated['progress'] > 0) {
+            $newStatus = 'in_progress';
+        } elseif ($validated['progress'] == 0 && $project->status == 'completed') {
+            $newStatus = 'in_progress';
+        }
+
+        // Update the overall project's progress and status
         $project->update([
-            'progress' => $validated['progress']
+            'progress' => $validated['progress'],
+            'status' => $newStatus
         ]);
 
         return redirect()->back()->with('success', 'Progress log created successfully!');
@@ -66,8 +76,18 @@ class ProjectTaskController extends Controller
 
         $task->update($updateData);
 
+        $newStatus = $project->status;
+        if ($validated['progress'] == 100) {
+            $newStatus = 'completed';
+        } elseif ($validated['progress'] > 0) {
+            $newStatus = 'in_progress';
+        } elseif ($validated['progress'] == 0 && $project->status == 'completed') {
+            $newStatus = 'in_progress';
+        }
+
         $project->update([
-            'progress' => $validated['progress']
+            'progress' => $validated['progress'],
+            'status' => $newStatus
         ]);
 
         return redirect()->back()->with('success', 'Progress log updated successfully!');

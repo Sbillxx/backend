@@ -45,7 +45,7 @@ class DashboardController extends Controller
         }
 
         // Filter projects berdasarkan active team atau user teams
-        $projectsQuery = Project::with(['user', 'assignedUsers', 'tasks', 'team'])
+        $projectsQuery = Project::with(['user', 'assignedUsers', 'tasks', 'team', 'divisi'])
             ->withCount(['tasks', 'tasks as completed_tasks_count' => function ($query) {
                 $query->where('status', 'completed');
             }]);
@@ -102,17 +102,20 @@ class DashboardController extends Controller
                     'completed_tasks_count' => $project->completed_tasks_count,
                     'progress_percentage' => $project->progress_percentage,
                     'created_at' => $project->created_at->format('Y-m-d'),
+                    'divisi' => $project->divisi ? $project->divisi->toArray() : null,
                 ];
             });
 
-        // Group projects by Team instead of OPD
-        $projectsByTeam = $projects->groupBy('team.name')->map(function ($teamProjects, $teamName) {
+        // Group projects by Divisi
+        $projectsByTeam = $projects->groupBy(function ($project) {
+            return !empty($project['divisi']['nama']) ? $project['divisi']['nama'] : 'Tidak Diketahui';
+        })->map(function ($teamProjects, $teamName) {
             $totalProjects = $teamProjects->count();
             $completedProjects = $teamProjects->where('status', 'completed')->count();
             $avgProgress = $totalProjects > 0 ? round($teamProjects->avg('progress_percentage')) : 0;
 
             return [
-                'team_name' => $teamName ?: 'No Team',
+                'team_name' => $teamName,
                 'total_projects' => $totalProjects,
                 'completed_projects' => $completedProjects,
                 'in_progress_projects' => $teamProjects->where('status', 'in_progress')->count(),
@@ -160,12 +163,35 @@ class DashboardController extends Controller
             return $project['is_urgent'] || $project['is_overdue'];
         })->sortBy('days_until_due')->values();
 
+        // Trending chart data (last 6 months)
+        $trendingChartData = collect(range(5, 0))->map(function ($i) use ($projects) {
+            $date = Carbon::now()->subMonths($i);
+            $monthStart = $date->copy()->startOfMonth();
+            $monthEnd = $date->copy()->endOfMonth();
+            
+            $monthProjects = $projects->filter(function ($project) use ($monthStart, $monthEnd) {
+                // Parse created_at if it's a string from map above
+                $createdAt = Carbon::parse($project['created_at']);
+                return $createdAt->between($monthStart, $monthEnd);
+            });
+            
+            // Accumulate historical if needed, or just new per month.
+            // For a trending chart of current status per month, we can count total projects created up to that month
+            // that are completed or in progress. For simplicity, just count new ones created in that month.
+            return [
+                'month' => $date->translatedFormat('M'), // Jan, Feb, dst
+                'completed' => $monthProjects->where('status', 'completed')->count(),
+                'in_progress' => $monthProjects->whereIn('status', ['in_progress', 'planning'])->count(),
+            ];
+        })->values();
+
         return Inertia::render('dashboard/index', [
             'projects' => $projects,
             'stats' => $stats,
             'projects_by_team' => $projectsByTeam,
             'status_chart_data' => $statusChartData,
             'team_chart_data' => $teamChartData,
+            'trending_chart_data' => $trendingChartData,
             'recent_projects' => $recentProjects,
             'urgent_projects' => $urgentProjects,
             'active_team' => $activeTeam,
