@@ -83,6 +83,10 @@ class DashboardController extends Controller
                     $isOverdue = $daysUntilDue < 0;
                     $isUrgent = $daysUntilDue >= 0 && $daysUntilDue <= 7;
                 }
+                
+                if ($project->workload === 'AT RISK') {
+                    $isUrgent = true;
+                }
 
                 return [
                     'id' => $project->id,
@@ -98,6 +102,7 @@ class DashboardController extends Controller
                     'days_until_due' => $daysUntilDue,
                     'is_overdue' => $isOverdue,
                     'is_urgent' => $isUrgent,
+                    'workload' => $project->workload ?? 'NORMAL',
                     'tasks_count' => $project->tasks_count,
                     'completed_tasks_count' => $project->completed_tasks_count,
                     'progress_percentage' => $project->progress_percentage,

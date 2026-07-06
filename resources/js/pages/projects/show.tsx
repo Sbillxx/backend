@@ -126,9 +126,6 @@ export default function ProjectShow({ project, users }: Props) {
                     <p className="text-xs text-slate-500">Essential information</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
-                  <Pencil className="w-4 h-4" />
-                </Button>
               </CardHeader>
               <CardContent className="space-y-6 pt-4">
                 {/* Project Manager */}
@@ -184,9 +181,6 @@ export default function ProjectShow({ project, users }: Props) {
                       })}
                     </span>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
-                    <Share2 className="w-4 h-4" />
-                  </Button>
                 </div>
               </CardContent>
             </Card>

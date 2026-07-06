@@ -52,7 +52,7 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
                 <Building2 className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold text-slate-800 dark:text-slate-100">Dasbor Eksekutif</span>
+                <span className="truncate font-semibold text-slate-800 dark:text-slate-100">Dasbor Staff</span>
                 <span className="truncate text-xs text-muted-foreground">Kominfo</span>
               </div>
             </SidebarMenuButton>

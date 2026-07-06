@@ -426,6 +426,11 @@ export default function DashboardIndex({
                               <Badge variant="outline" className="text-xs">
                                 {project.opd_owner || 'No OPD'}
                               </Badge>
+                              {project.workload === 'AT RISK' && (
+                                <Badge variant="destructive" className="text-xs bg-red-600">
+                                  AT RISK
+                                </Badge>
+                              )}
                               <Badge variant="outline" className="text-xs">
                                 {project.status?.replace('_', ' ') || 'No Status'}
                               </Badge>
@@ -483,9 +488,14 @@ export default function DashboardIndex({
                               {project.name}
                             </h4>
                             <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline" className="text-xs border-orange-300">
+                              <Badge variant="outline" className="text-xs border-orange-200 text-orange-700 bg-orange-50">
                                 {project.opd_owner || 'No OPD'}
                               </Badge>
+                              {project.workload === 'AT RISK' && (
+                                <Badge variant="destructive" className="text-xs bg-red-600">
+                                  AT RISK
+                                </Badge>
+                              )}
                               <Badge variant="destructive" className="text-xs">
                                 {project.is_overdue ? 'Terlambat' : 'Segera'}
                               </Badge>
