@@ -64,6 +64,7 @@ interface Project {
   team_id: number
   opd_owner: string | null
   assigned_users: number[]
+  documents?: { id: number, name: string, url: string }[]
 }
 
 interface EditProjectProps {
@@ -87,6 +88,7 @@ export default function EditProject({ project, users, teams, can_change_team }: 
     team_id: project.team_id ? project.team_id.toString() : '',
     opd_owner: project.opd_owner || '',
     assigned_users: project.assigned_users || [],
+    document_files: [] as File[],
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,6 +103,26 @@ export default function EditProject({ project, users, teams, can_change_team }: 
       setData('assigned_users', updated) // sinkron langsung ke form
       return updated
     })
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      planning: 'Perencanaan',
+      in_progress: 'Sedang Berjalan',
+      completed: 'Selesai',
+      on_hold: 'Ditunda'
+    }
+    return labels[status] || status.replace('_', ' ')
+  }
+
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      low: 'Rendah',
+      medium: 'Sedang',
+      high: 'Tinggi',
+      urgent: 'Mendesak'
+    }
+    return labels[priority] || priority
   }
 
   const getStatusIcon = (status: string) => {
@@ -134,8 +156,8 @@ export default function EditProject({ project, users, teams, can_change_team }: 
   }
 
   return (
-    <AuthenticatedLayout title="Edit Project">
-      <Head title={`Edit Project - ${project.name}`} />
+    <AuthenticatedLayout title="Edit Proyek">
+      <Head title={`Edit Proyek - ${project.name}`} />
 
       <div className="space-y-6 p-6">
         {/* Header */}
@@ -144,13 +166,13 @@ export default function EditProject({ project, users, teams, can_change_team }: 
             <Link href={route('dashboard.projects.index')}>
               <Button variant="ghost" size="sm">
                 <IconArrowLeft className="h-4 w-4 mr-2" />
-                Back to Projects
+                Kembali ke Proyek
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Edit Project</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Edit Proyek</h1>
               <p className="text-muted-foreground">
-                Update project information and settings
+                Perbarui informasi dan pengaturan proyek
               </p>
             </div>
           </div>
@@ -158,7 +180,7 @@ export default function EditProject({ project, users, teams, can_change_team }: 
             <Link href={route('dashboard.projects.show', project.id)}>
               <Button variant="outline" size="sm">
                 <IconEye className="h-4 w-4 mr-2" />
-                View Project
+                Lihat Proyek
               </Button>
             </Link>
           </div>
@@ -171,16 +193,16 @@ export default function EditProject({ project, users, teams, can_change_team }: 
               <div>
                 <CardTitle className="text-lg">{project.name}</CardTitle>
                 <CardDescription>
-                  Project ID: #{project.id}
+                  ID Proyek: #{project.id}
                 </CardDescription>
               </div>
               <div className="flex items-center space-x-2">
                 <Badge className={getStatusColor(data.status)}>
                   {getStatusIcon(data.status)}
-                  <span className="ml-1 capitalize">{data.status.replace('_', ' ')}</span>
+                  <span className="ml-1 capitalize">{getStatusLabel(data.status)}</span>
                 </Badge>
                 <Badge className={getPriorityColor(data.priority)}>
-                  {data.priority.toUpperCase()}
+                  {getPriorityLabel(data.priority).toUpperCase()}
                 </Badge>
               </div>
             </div>
@@ -196,22 +218,22 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <IconTarget className="h-5 w-5" />
-                    <span>Project Information</span>
+                    <span>Informasi Proyek</span>
                   </CardTitle>
                   <CardDescription>
-                    Update basic project details
+                    Perbarui detail dasar proyek
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <Label htmlFor="name">Project Name *</Label>
+                      <Label htmlFor="name">Nama Proyek *</Label>
                       <Input
                         id="name"
                         value={data.name}
                         onChange={(e) => setData('name', e.target.value)}
                         className={errors.name ? 'border-red-500' : ''}
-                        placeholder="Enter project name"
+                        placeholder="Masukkan nama proyek"
                       />
                       {errors.name && (
                         <p className="text-sm text-red-500 mt-1">{errors.name}</p>
@@ -219,13 +241,13 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                     </div>
 
                     <div className="md:col-span-2">
-                      <Label htmlFor="description">Description</Label>
+                      <Label htmlFor="description">Deskripsi</Label>
                       <Textarea
                         id="description"
                         value={data.description}
                         onChange={(e) => setData('description', e.target.value)}
                         className={errors.description ? 'border-red-500' : ''}
-                        placeholder="Describe the project goals and objectives"
+                        placeholder="Deskripsikan tujuan dan sasaran proyek"
                         rows={4}
                       />
                       {errors.description && (
@@ -234,21 +256,56 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                     </div>
 
                     <div>
-                      <Label htmlFor="opd_owner">OPD Owner</Label>
+                      <Label htmlFor="opd_owner">Pemilik OPD</Label>
                       <Input
                         id="opd_owner"
                         value={data.opd_owner}
                         onChange={(e) => setData('opd_owner', e.target.value)}
-                        placeholder="Enter OPD owner"
+                        placeholder="Masukkan pemilik OPD"
                       />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="document_files">Dokumen Pekerjaan Resmi (Tambahan)</Label>
+                      {project.documents && project.documents.length > 0 && (
+                        <div className="mb-2 text-sm text-blue-600">
+                          Dokumen saat ini: 
+                          <ul className="list-disc list-inside mt-1">
+                            {project.documents.map(doc => (
+                              <li key={doc.id}>
+                                <a href={doc.url} target="_blank" rel="noreferrer" className="underline font-medium">{doc.name}</a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <Input
+                        id="document_files"
+                        type="file"
+                        multiple
+                        onChange={(e) => setData('document_files', e.target.files ? Array.from(e.target.files) : [])}
+                        className={errors.document_files ? 'border-red-500' : ''}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                      />
+                      {errors.document_files && (
+                        <p className="text-sm text-red-500 mt-1">{errors.document_files}</p>
+                      )}
+                      {data.document_files.length > 0 && (
+                        <div className="mt-2 text-sm text-gray-500">
+                          {data.document_files.length} file terpilih
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format: PDF, Word, Excel, Gambar (Max 10MB). File baru akan ditambahkan ke daftar dokumen.
+                      </p>
                     </div>
 
                     {can_change_team && (
                       <div>
-                        <Label htmlFor="team_id">Team</Label>
+                        <Label htmlFor="team_id">Tim</Label>
                         <Select value={data.team_id} onValueChange={(value) => setData('team_id', value)}>
                           <SelectTrigger className={errors.team_id ? 'border-red-500' : ''}>
-                            <SelectValue placeholder="Select team" />
+                            <SelectValue placeholder="Pilih tim" />
                           </SelectTrigger>
                           <SelectContent>
                             {teams.map((team) => (
@@ -272,18 +329,18 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <IconUsers className="h-5 w-5" />
-                    <span>Team Assignment</span>
+                    <span>Penugasan Tim</span>
                   </CardTitle>
                   <CardDescription>
-                    Update project manager and team members
+                    Perbarui manajer proyek dan anggota tim
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <Label htmlFor="user_id">Project Manager *</Label>
+                    <Label htmlFor="user_id">Manajer Proyek *</Label>
                     <Select value={data.user_id} onValueChange={(value) => setData('user_id', value)}>
                       <SelectTrigger className={errors.user_id ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select project manager" />
+                        <SelectValue placeholder="Pilih manajer proyek" />
                       </SelectTrigger>
                       <SelectContent>
                         {users.map((user) => (
@@ -299,7 +356,7 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                   </div>
 
                   <div>
-                    <Label>Assigned Team Members</Label>
+                    <Label>Anggota Tim yang Ditugaskan</Label>
                     <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                       {users.map((user) => (
                         <div
@@ -335,10 +392,10 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <IconCalendar className="h-5 w-5" />
-                    <span>Timeline & Priority</span>
+                    <span>Linimasa & Prioritas</span>
                   </CardTitle>
                   <CardDescription>
-                    Update project timeline and priority level
+                    Perbarui linimasa dan tingkat prioritas proyek
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -353,25 +410,25 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                           <SelectItem value="planning">
                             <div className="flex items-center space-x-2">
                               <IconTarget className="h-4 w-4" />
-                              <span>Planning</span>
+                              <span>Perencanaan</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="in_progress">
                             <div className="flex items-center space-x-2">
                               <IconClock className="h-4 w-4" />
-                              <span>In Progress</span>
+                              <span>Sedang Berjalan</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="completed">
                             <div className="flex items-center space-x-2">
                               <IconCheck className="h-4 w-4" />
-                              <span>Completed</span>
+                              <span>Selesai</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="on_hold">
                             <div className="flex items-center space-x-2">
                               <IconAlertTriangle className="h-4 w-4" />
-                              <span>On Hold</span>
+                              <span>Ditunda</span>
                             </div>
                           </SelectItem>
                         </SelectContent>
@@ -388,25 +445,25 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                           <SelectItem value="low">
                             <div className="flex items-center space-x-2">
                               <IconFlag className="h-4 w-4 text-green-600" />
-                              <span>Low Priority</span>
+                              <span>Prioritas Rendah</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="medium">
                             <div className="flex items-center space-x-2">
                               <IconFlag className="h-4 w-4 text-yellow-600" />
-                              <span>Medium Priority</span>
+                              <span>Prioritas Sedang</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="high">
                             <div className="flex items-center space-x-2">
                               <IconFlag className="h-4 w-4 text-orange-600" />
-                              <span>High Priority</span>
+                              <span>Prioritas Tinggi</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="urgent">
                             <div className="flex items-center space-x-2">
                               <IconFlag className="h-4 w-4 text-red-600" />
-                              <span>Urgent</span>
+                              <span>Mendesak</span>
                             </div>
                           </SelectItem>
                         </SelectContent>
@@ -414,7 +471,7 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                     </div>
 
                     <div>
-                      <Label htmlFor="start_date">Start Date</Label>
+                      <Label htmlFor="start_date">Tanggal Mulai</Label>
                       <Input
                         id="start_date"
                         type="date"
@@ -428,7 +485,7 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                     </div>
 
                     <div>
-                      <Label htmlFor="due_date">Due Date</Label>
+                      <Label htmlFor="due_date">Tenggat Waktu</Label>
                       <Input
                         id="due_date"
                         type="date"
@@ -450,11 +507,11 @@ export default function EditProject({ project, users, teams, can_change_team }: 
               {/* Changes Summary */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Changes Summary</CardTitle>
+                  <CardTitle>Ringkasan Perubahan</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-500">Project Name</p>
+                    <p className="text-sm text-gray-500">Nama Proyek</p>
                     <p className="font-medium">{data.name}</p>
                   </div>
 
@@ -462,20 +519,20 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                     <p className="text-sm text-gray-500">Status</p>
                     <div className="flex items-center space-x-2 mt-1">
                       {getStatusIcon(data.status)}
-                      <span className="capitalize">{data.status.replace('_', ' ')}</span>
+                      <span className="capitalize">{getStatusLabel(data.status)}</span>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-500">Priority</p>
+                    <p className="text-sm text-gray-500">Prioritas</p>
                     <Badge className={getPriorityColor(data.priority)}>
-                      {data.priority.toUpperCase()}
+                      {getPriorityLabel(data.priority).toUpperCase()}
                     </Badge>
                   </div>
 
                   {selectedUsers.length > 0 && (
                     <div>
-                      <p className="text-sm text-gray-500">Team Members ({selectedUsers.length})</p>
+                      <p className="text-sm text-gray-500">Anggota Tim ({selectedUsers.length})</p>
                       <div className="flex -space-x-2 mt-1">
                         {selectedUsers.slice(0, 5).map((userId) => {
                           const user = users.find(u => u.id === userId)
@@ -507,7 +564,7 @@ export default function EditProject({ project, users, teams, can_change_team }: 
 
                   {data.due_date && (
                     <div>
-                      <p className="text-sm text-gray-500">Due Date</p>
+                      <p className="text-sm text-gray-500">Tenggat Waktu</p>
                       <p className="text-sm">{new Date(data.due_date).toLocaleDateString('id-ID')}</p>
                     </div>
                   )}
@@ -524,12 +581,12 @@ export default function EditProject({ project, users, teams, can_change_team }: 
                       className="w-full"
                     >
                       <IconGavel className="h-4 w-4 mr-2" />
-                      {processing ? 'Saving Changes...' : 'Save Changes'}
+                      {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
                     </Button>
 
                     <Link href={route('dashboard.projects.show', project.id)}>
                       <Button variant="outline" className="w-full">
-                        Cancel & View Project
+                        Batal & Lihat Proyek
                       </Button>
                     </Link>
                   </div>

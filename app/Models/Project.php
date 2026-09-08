@@ -60,14 +60,64 @@ class Project extends Model
         return $this->hasMany(ProjectTask::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ProjectDocument::class);
+    }
+
     public function bugs(): HasMany
     {
         return $this->hasMany(ProjectBug::class);
     }
 
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(ProjectMilestone::class)->orderBy('order')->orderBy('id');
+    }
+
     public function reports(): HasMany
     {
         return $this->hasMany(ProjectReport::class);
+    }
+
+    public function recalculateProgress(): float
+    {
+        $milestones = $this->milestones;
+        $totalMilestones = $milestones->count();
+
+        if ($totalMilestones > 0) {
+            $totalProgressSum = 0;
+            foreach ($milestones as $milestone) {
+                $totalTasks = $milestone->tasks()->count();
+                if ($totalTasks > 0) {
+                    $completedTasks = $milestone->tasks()->where('status', 'completed')->count();
+                    $mProgress = ($completedTasks / $totalTasks) * 100;
+                    
+                    if ($completedTasks === $totalTasks && $milestone->status !== 'completed') {
+                        $milestone->update(['status' => 'completed']);
+                    }
+                } else {
+                    $mProgress = match ($milestone->status) {
+                        'completed' => 100,
+                        'in_progress' => 50,
+                        default => 0,
+                    };
+                }
+                $totalProgressSum += $mProgress;
+            }
+            $calculatedProgress = round($totalProgressSum / $totalMilestones, 1);
+        } else {
+            $totalTasks = $this->tasks()->count();
+            if ($totalTasks > 0) {
+                $completedTasks = $this->tasks()->where('status', 'completed')->count();
+                $calculatedProgress = round(($completedTasks / $totalTasks) * 100, 1);
+            } else {
+                $calculatedProgress = (float)($this->progress ?? 0);
+            }
+        }
+
+        $this->update(['progress' => $calculatedProgress]);
+        return $calculatedProgress;
     }
 
     // Scope untuk filter berdasarkan team

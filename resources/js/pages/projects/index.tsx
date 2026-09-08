@@ -126,9 +126,29 @@ export default function ProjectsIndex({
   }
 
   const handleDeleteProject = (projectId: number) => {
-    if (confirm('Are you sure you want to delete this project?')) {
+    if (confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
       router.delete(route('dashboard.projects.destroy', projectId))
     }
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      planning: 'Perencanaan',
+      in_progress: 'Sedang Berjalan',
+      completed: 'Selesai',
+      on_hold: 'Ditunda'
+    }
+    return labels[status] || status.replace('_', ' ')
+  }
+
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      low: 'Rendah',
+      medium: 'Sedang',
+      high: 'Tinggi',
+      urgent: 'Mendesak'
+    }
+    return labels[priority] || priority
   }
 
   const getStatusColor = (status: string) => {
@@ -187,13 +207,13 @@ export default function ProjectsIndex({
               </Link>
             </CardTitle>
             <CardDescription className="text-sm line-clamp-2">
-              {project.description || 'No description provided'}
+              {project.description || 'Tidak ada deskripsi'}
             </CardDescription>
           </div>
           <div className="flex items-center space-x-1 ml-4">
             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
               {getStatusIcon(project.status)}
-              <span className="ml-1 capitalize">{project.status.replace('_', ' ')}</span>
+              <span className="ml-1 capitalize">{getStatusLabel(project.status)}</span>
             </div>
           </div>
         </div>
@@ -205,18 +225,18 @@ export default function ProjectsIndex({
           <div className="flex items-center justify-between">
             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(project.priority)}`}>
               <IconAlertTriangle className="h-3 w-3 mr-1" />
-              {project.priority.toUpperCase()}
+              {getPriorityLabel(project.priority).toUpperCase()}
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <IconUsers className="h-4 w-4 mr-1" />
-              {project.team?.name || 'No Team'}
+              {project.team?.name || 'Tidak Ada Tim'}
             </div>
           </div>
 
           {/* Progress */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700">Progress</span>
+              <span className="text-sm font-medium text-gray-700">Kemajuan</span>
               <span className="text-sm text-gray-600">{project.progress_percentage}%</span>
             </div>
             <Progress value={project.progress_percentage} className="h-2" />
@@ -226,7 +246,7 @@ export default function ProjectsIndex({
           {project.due_date && (
             <div className={`flex items-center text-sm ${isOverdue(project.due_date) ? 'text-red-600' : 'text-gray-600'}`}>
               <IconCalendar className="h-4 w-4 mr-2" />
-              <span>Due {formatDate(project.due_date)}</span>
+              <span>Tenggat {formatDate(project.due_date)}</span>
               {isOverdue(project.due_date) && (
                 <IconAlertTriangle className="h-4 w-4 ml-1 text-red-500" />
               )}
@@ -236,7 +256,7 @@ export default function ProjectsIndex({
           {/* Assigned Users */}
           {project.assigned_users.length > 0 && (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Team:</span>
+              <span className="text-sm text-gray-600">Tim:</span>
               <div className="flex -space-x-2">
                 {project.assigned_users.slice(0, 3).map((user, index) => (
                   <TooltipProvider key={user.id}>
@@ -294,15 +314,15 @@ export default function ProjectsIndex({
   )
 
   return (
-    <AuthenticatedLayout title="Projects">
-      <Head title="Projects" />
+    <AuthenticatedLayout title="Proyek">
+      <Head title="Proyek" />
 
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Projects
+              Proyek
               {activeTeam && (
                 <span className="ml-2 text-lg font-medium text-muted-foreground">
                   - {activeTeam.name}
@@ -311,10 +331,10 @@ export default function ProjectsIndex({
             </h1>
             <p className="text-muted-foreground">
               {activeTeam
-                ? `Menampilkan ${projects.length} proyek untuk team ${activeTeam.name}`
+                ? `Menampilkan ${projects.length} proyek untuk tim ${activeTeam.name}`
                 : user_role === 'admin'
                   ? `Menampilkan ${projects.length} proyek`
-                  : `Menampilkan ${projects.length} proyek dari teams Anda`
+                  : `Menampilkan ${projects.length} proyek dari tim Anda`
               }
             </p>
           </div>
@@ -337,7 +357,7 @@ export default function ProjectsIndex({
               <Button asChild>
                 <Link href={route('dashboard.projects.create')}>
                   <IconPlus className="mr-2 h-4 w-4" />
-                  Create Project
+                  Buat Proyek
                 </Link>
               </Button>
             )}
@@ -352,7 +372,7 @@ export default function ProjectsIndex({
                 <div className="relative">
                   <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search projects..."
+                    placeholder="Cari proyek..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={(e) => {
@@ -374,22 +394,22 @@ export default function ProjectsIndex({
                   }}
                 >
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
+                    <SelectValue placeholder="Filter berdasarkan status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="planning">Planning</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="all">Semua status</SelectItem>
+                    <SelectItem value="planning">Perencanaan</SelectItem>
+                    <SelectItem value="in_progress">Sedang Berjalan</SelectItem>
+                    <SelectItem value="completed">Selesai</SelectItem>
+                    <SelectItem value="on_hold">Ditunda</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button onClick={() => handleFilter()} variant="outline">
-                  Apply
+                  Terapkan
                 </Button>
                 {(search || selectedStatus !== 'all') && (
                   <Button onClick={clearFilters} variant="ghost" size="sm">
-                    Clear
+                    Hapus Filter
                   </Button>
                 )}
               </div>
@@ -402,18 +422,18 @@ export default function ProjectsIndex({
           <Card>
             <CardContent className="text-center py-12">
               <IconTarget className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No projects found</h3>
+              <h3 className="text-lg font-medium mb-2">Proyek tidak ditemukan</h3>
               <p className="text-muted-foreground mb-4">
                 {activeTeam
-                  ? `No projects found in ${activeTeam.name} team.`
-                  : 'Get started by creating your first project.'
+                  ? `Tidak ada proyek di tim ${activeTeam.name}.`
+                  : 'Mulai dengan membuat proyek pertama Anda.'
                 }
               </p>
               {can_create && (
                 <Button asChild>
                   <Link href={route('dashboard.projects.create')}>
                     <IconPlus className="mr-2 h-4 w-4" />
-                    Create Project
+                    Buat Proyek
                   </Link>
                 </Button>
               )}

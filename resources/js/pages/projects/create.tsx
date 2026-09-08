@@ -71,6 +71,7 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
     team_id: '',
     opd_owner: '',
     assigned_users: [] as string[],
+    document_files: [] as File[],
   })
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -114,15 +115,35 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
     }
   }
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      planning: 'Perencanaan',
+      in_progress: 'Sedang Berjalan',
+      completed: 'Selesai',
+      on_hold: 'Ditunda'
+    }
+    return labels[status] || status.replace('_', ' ')
+  }
+
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      low: 'Rendah',
+      medium: 'Sedang',
+      high: 'Tinggi',
+      urgent: 'Mendesak'
+    }
+    return labels[priority] || priority
+  }
+
   const steps = [
-    { id: 1, name: 'Project Details', icon: IconTarget },
-    { id: 2, name: 'Team Assignment', icon: IconUsers },
-    { id: 3, name: 'Timeline & Priority', icon: IconCalendar },
+    { id: 1, name: 'Detail Proyek', icon: IconTarget },
+    { id: 2, name: 'Penugasan Tim', icon: IconUsers },
+    { id: 3, name: 'Linimasa & Prioritas', icon: IconCalendar },
   ]
 
   return (
-    <AuthenticatedLayout title="Create Project">
-      <Head title="Create Project" />
+    <AuthenticatedLayout title="Buat Proyek">
+      <Head title="Buat Proyek" />
 
       <div className="space-y-6 p-6">
         {/* Header */}
@@ -130,13 +151,13 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
           <Link href={route('dashboard.projects.index')}>
             <Button variant="ghost" size="sm">
               <IconArrowLeft className="h-4 w-4 mr-2" />
-              Back to Projects
+              Kembali ke Proyek
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Create New Project</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Buat Proyek Baru</h1>
             <p className="text-muted-foreground">
-              Set up a new project with team members and timeline
+              Siapkan proyek baru beserta anggota tim dan linimasa
             </p>
           </div>
         </div>
@@ -147,25 +168,22 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
             <div className="flex items-center justify-between">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                    currentStep >= step.id
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep >= step.id
                       ? 'bg-blue-600 border-blue-600 text-white'
                       : 'border-gray-300 text-gray-500'
-                  }`}>
+                    }`}>
                     <step.icon className="h-5 w-5" />
                   </div>
                   <div className="ml-3">
-                    <p className={`text-sm font-medium ${
-                      currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
-                    }`}>
-                      Step {step.id}
+                    <p className={`text-sm font-medium ${currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
+                      }`}>
+                      Langkah {step.id}
                     </p>
                     <p className="text-sm text-gray-500">{step.name}</p>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-4 ${
-                      currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'
-                    }`} />
+                    <div className={`flex-1 h-0.5 mx-4 ${currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'
+                      }`} />
                   )}
                 </div>
               ))}
@@ -183,22 +201,22 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <IconTarget className="h-5 w-5" />
-                      <span>Project Information</span>
+                      <span>Informasi Proyek</span>
                     </CardTitle>
                     <CardDescription>
-                      Basic details about your project
+                      Detail dasar mengenai proyek Anda
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
-                        <Label htmlFor="name">Project Name *</Label>
+                        <Label htmlFor="name">Nama Proyek *</Label>
                         <Input
                           id="name"
                           value={data.name}
                           onChange={(e) => setData('name', e.target.value)}
                           className={errors.name ? 'border-red-500' : ''}
-                          placeholder="Enter project name"
+                          placeholder="Masukkan nama proyek"
                         />
                         {errors.name && (
                           <p className="text-sm text-red-500 mt-1">{errors.name}</p>
@@ -206,13 +224,13 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                       </div>
 
                       <div className="md:col-span-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">Deskripsi</Label>
                         <Textarea
                           id="description"
                           value={data.description}
                           onChange={(e) => setData('description', e.target.value)}
                           className={errors.description ? 'border-red-500' : ''}
-                          placeholder="Describe the project goals and objectives"
+                          placeholder="Deskripsikan tujuan dan sasaran proyek"
                           rows={4}
                         />
                         {errors.description && (
@@ -221,20 +239,41 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                       </div>
 
                       <div>
-                        <Label htmlFor="opd_owner">OPD Owner</Label>
+                        <Label htmlFor="opd_owner">Pemilik OPD</Label>
                         <Input
                           id="opd_owner"
                           value={data.opd_owner}
                           onChange={(e) => setData('opd_owner', e.target.value)}
-                          placeholder="Enter OPD owner"
+                          placeholder="Masukkan pemilik OPD"
                         />
                       </div>
 
+                      <div className="md:col-span-2">
+                        <Label htmlFor="document_files">Dokumen Pekerjaan Resmi (Opsional)</Label>
+                        <Input
+                          id="document_files"
+                          type="file"
+                          multiple
+                          onChange={(e) => setData('document_files', e.target.files ? Array.from(e.target.files) : [])}
+                          className={errors.document_files ? 'border-red-500' : ''}
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                        />
+                        {errors.document_files && (
+                          <p className="text-sm text-red-500 mt-1">{errors.document_files}</p>
+                        )}
+                        {data.document_files.length > 0 && (
+                          <div className="mt-2 text-sm text-gray-500">
+                            {data.document_files.length} file terpilih
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">Format: PDF, Word, Excel, Gambar (Max 10MB)</p>
+                      </div>
+
                       <div>
-                        <Label htmlFor="team_id">Team *</Label>
+                        <Label htmlFor="team_id">Tim *</Label>
                         <Select value={data.team_id} onValueChange={(value) => setData('team_id', value)}>
                           <SelectTrigger className={errors.team_id ? 'border-red-500' : ''}>
-                            <SelectValue placeholder="Select team" />
+                            <SelectValue placeholder="Pilih tim" />
                           </SelectTrigger>
                           <SelectContent>
                             {teams.map((team) => (
@@ -259,18 +298,18 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <IconUsers className="h-5 w-5" />
-                      <span>Team Assignment</span>
+                      <span>Penugasan Tim</span>
                     </CardTitle>
                     <CardDescription>
-                      Select project manager and assign team members
+                      Pilih manajer proyek dan tugaskan anggota tim
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div>
-                      <Label htmlFor="user_id">Project Manager *</Label>
+                      <Label htmlFor="user_id">Manajer Proyek *</Label>
                       <Select value={data.user_id} onValueChange={(value) => setData('user_id', value)}>
                         <SelectTrigger className={errors.user_id ? 'border-red-500' : ''}>
-                          <SelectValue placeholder="Select project manager" />
+                          <SelectValue placeholder="Pilih manajer proyek" />
                         </SelectTrigger>
                         <SelectContent>
                           {users.map((user) => (
@@ -286,16 +325,15 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                     </div>
 
                     <div>
-                      <Label>Assigned Team Members</Label>
+                      <Label>Anggota Tim yang Ditugaskan</Label>
                       <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                         {users.map((user) => (
                           <div
                             key={user.id}
-                            className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
-                              selectedUsers.includes(user.id)
+                            className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${selectedUsers.includes(user.id)
                                 ? 'bg-blue-50 border-blue-200'
                                 : 'hover:bg-gray-50'
-                            }`}
+                              }`}
                           >
                             <Checkbox
                               checked={selectedUsers.includes(user.id)}
@@ -324,10 +362,10 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <IconCalendar className="h-5 w-5" />
-                      <span>Timeline & Priority</span>
+                      <span>Linimasa & Prioritas</span>
                     </CardTitle>
                     <CardDescription>
-                      Set project timeline and priority level
+                      Atur linimasa proyek dan tingkat prioritas
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -342,25 +380,25 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                             <SelectItem value="planning">
                               <div className="flex items-center space-x-2">
                                 <IconTarget className="h-4 w-4" />
-                                <span>Planning</span>
+                                <span>Perencanaan</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="in_progress">
                               <div className="flex items-center space-x-2">
                                 <IconClock className="h-4 w-4" />
-                                <span>In Progress</span>
+                                <span>Sedang Berjalan</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="completed">
                               <div className="flex items-center space-x-2">
                                 <IconCheck className="h-4 w-4" />
-                                <span>Completed</span>
+                                <span>Selesai</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="on_hold">
                               <div className="flex items-center space-x-2">
                                 <IconAlertTriangle className="h-4 w-4" />
-                                <span>On Hold</span>
+                                <span>Ditunda</span>
                               </div>
                             </SelectItem>
                           </SelectContent>
@@ -368,7 +406,7 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                       </div>
 
                       <div>
-                        <Label htmlFor="priority">Priority</Label>
+                        <Label htmlFor="priority">Prioritas</Label>
                         <Select value={data.priority} onValueChange={(value) => setData('priority', value)}>
                           <SelectTrigger>
                             <SelectValue />
@@ -377,25 +415,25 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                             <SelectItem value="low">
                               <div className="flex items-center space-x-2">
                                 <IconFlag className="h-4 w-4 text-green-600" />
-                                <span>Low Priority</span>
+                                <span>Prioritas Rendah</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="medium">
                               <div className="flex items-center space-x-2">
                                 <IconFlag className="h-4 w-4 text-yellow-600" />
-                                <span>Medium Priority</span>
+                                <span>Prioritas Sedang</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="high">
                               <div className="flex items-center space-x-2">
                                 <IconFlag className="h-4 w-4 text-orange-600" />
-                                <span>High Priority</span>
+                                <span>Prioritas Tinggi</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="urgent">
                               <div className="flex items-center space-x-2">
                                 <IconFlag className="h-4 w-4 text-red-600" />
-                                <span>Urgent</span>
+                                <span>Mendesak</span>
                               </div>
                             </SelectItem>
                           </SelectContent>
@@ -403,7 +441,7 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                       </div>
 
                       <div>
-                        <Label htmlFor="start_date">Start Date</Label>
+                        <Label htmlFor="start_date">Tanggal Mulai</Label>
                         <Input
                           id="start_date"
                           type="date"
@@ -417,7 +455,7 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                       </div>
 
                       <div>
-                        <Label htmlFor="due_date">Due Date</Label>
+                        <Label htmlFor="due_date">Tenggat Waktu</Label>
                         <Input
                           id="due_date"
                           type="date"
@@ -441,12 +479,12 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
             {/* Project Preview */}
             <Card>
               <CardHeader>
-                <CardTitle>Project Preview</CardTitle>
+                <CardTitle>Pratinjau Proyek</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-500">Project Name</p>
-                  <p className="font-medium">{data.name || 'Untitled Project'}</p>
+                  <p className="text-sm text-gray-500">Nama Proyek</p>
+                  <p className="font-medium">{data.name || 'Proyek Tanpa Judul'}</p>
                 </div>
 
                 {data.status && (
@@ -454,23 +492,23 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                     <p className="text-sm text-gray-500">Status</p>
                     <div className="flex items-center space-x-2 mt-1">
                       {getStatusIcon(data.status)}
-                      <span className="capitalize">{data.status.replace('_', ' ')}</span>
+                      <span className="capitalize">{getStatusLabel(data.status)}</span>
                     </div>
                   </div>
                 )}
 
                 {data.priority && (
                   <div>
-                    <p className="text-sm text-gray-500">Priority</p>
+                    <p className="text-sm text-gray-500">Prioritas</p>
                     <Badge className={getPriorityColor(data.priority)}>
-                      {data.priority.toUpperCase()}
+                      {getPriorityLabel(data.priority).toUpperCase()}
                     </Badge>
                   </div>
                 )}
 
                 {selectedUsers.length > 0 && (
                   <div>
-                    <p className="text-sm text-gray-500">Team Members</p>
+                    <p className="text-sm text-gray-500">Anggota Tim</p>
                     <div className="flex -space-x-2 mt-1">
                       {selectedUsers.slice(0, 3).map((userId) => {
                         const user = users.find(u => u.id === userId)
@@ -487,8 +525,8 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                               <TooltipContent>
                                 <p>{user?.name}</p>
                               </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            </Tooltip>
+                          </TooltipProvider>
                         )
                       })}
                       {selectedUsers.length > 3 && (
@@ -513,7 +551,7 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                       onClick={() => setCurrentStep(currentStep - 1)}
                       className="w-full"
                     >
-                      Previous Step
+                      Langkah Sebelumnya
                     </Button>
                   )}
 
@@ -527,7 +565,7 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                         (currentStep === 2 && !data.user_id)
                       }
                     >
-                      Next Step
+                      Langkah Selanjutnya
                     </Button>
                   ) : (
                     <Button
@@ -536,7 +574,7 @@ export default function CreateProject({ users, teams }: CreateProjectProps) {
                       disabled={processing}
                       className="w-full"
                     >
-                      {processing ? 'Creating...' : 'Create Project'}
+                      {processing ? 'Membuat...' : 'Buat Proyek'}
                     </Button>
                   )}
                 </div>

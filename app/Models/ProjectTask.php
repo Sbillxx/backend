@@ -17,6 +17,7 @@ class ProjectTask extends Model
         'priority',
         'due_date',
         'project_id',
+        'milestone_id',
         'assigned_to',
         'image_path',
     ];
@@ -30,6 +31,11 @@ class ProjectTask extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function milestone(): BelongsTo
+    {
+        return $this->belongsTo(ProjectMilestone::class, 'milestone_id');
     }
 
     public function assignedUser(): BelongsTo

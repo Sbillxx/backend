@@ -89,13 +89,25 @@ export default function DashboardIndex({
     on_hold: 'bg-gray-100 text-gray-800',
   };
 
+  const getStatusLabel = (status: string) => {
+    if (!status) return 'Belum ada status';
+    const normalized = status.toLowerCase().replace(' ', '_');
+    const labels: Record<string, string> = {
+      planning: 'Perencanaan',
+      in_progress: 'Sedang Berjalan',
+      completed: 'Selesai',
+      on_hold: 'Ditunda'
+    };
+    return labels[normalized] || status.replace('_', ' ');
+  };
+
   // Enhanced color schemes
   const PIE_COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#6b7280'];
   const GRADIENT_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c'];
 
   // Prepare data for charts
   const pieChartData = status_chart_data.map((item, index) => ({
-    name: item.name,
+    name: getStatusLabel(item.name),
     value: item.value || 0,
     color: PIE_COLORS[index] || '#6b7280'
   }));
@@ -263,29 +275,45 @@ export default function DashboardIndex({
               </CardHeader>
               <CardContent>
                 {pieChartData.length > 0 ? (
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie
-                          data={pieChartData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={renderCustomizedLabel}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {pieChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index]} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value, name) => [`${value} proyek`, name]}
-                          contentStyle={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}
-                        />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
+                  <div className="flex flex-col gap-6">
+                    <div className="h-[250px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie
+                            data={pieChartData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={renderCustomizedLabel}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {pieChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={PIE_COLORS[index]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, name) => [`${value} proyek`, name]}
+                            contentStyle={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                          />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {pieChartData.map((item, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-4 h-4 rounded-full" 
+                              style={{ backgroundColor: item.color }}
+                            ></div>
+                            <span className="text-sm font-medium">{item.name}</span>
+                          </div>
+                          <span className="text-sm font-bold">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="h-80 flex items-center justify-center text-muted-foreground">
@@ -424,20 +452,20 @@ export default function DashboardIndex({
                             </h4>
                             <div className="flex items-center gap-2 mt-2">
                               <Badge variant="outline" className="text-xs">
-                                {project.opd_owner || 'No OPD'}
+                                {project.opd_owner || 'Belum ada OPD'}
                               </Badge>
                               {project.workload === 'AT RISK' && (
                                 <Badge variant="destructive" className="text-xs bg-red-600">
-                                  AT RISK
+                                  BERISIKO
                                 </Badge>
                               )}
                               <Badge variant="outline" className="text-xs">
-                                {project.status?.replace('_', ' ') || 'No Status'}
+                                {getStatusLabel(project.status)}
                               </Badge>
                             </div>
                             <div className="mt-3">
                               <div className="flex items-center justify-between text-sm mb-1">
-                                <span className="text-muted-foreground">Progress</span>
+                                <span className="text-muted-foreground">Kemajuan</span>
                                 <span className="font-medium">{project.progress_percentage || 0}%</span>
                               </div>
                               <Progress value={project.progress_percentage || 0} className="h-2" />
@@ -489,11 +517,11 @@ export default function DashboardIndex({
                             </h4>
                             <div className="flex items-center gap-2 mt-2">
                               <Badge variant="outline" className="text-xs border-orange-200 text-orange-700 bg-orange-50">
-                                {project.opd_owner || 'No OPD'}
+                                {project.opd_owner || 'Belum ada OPD'}
                               </Badge>
                               {project.workload === 'AT RISK' && (
                                 <Badge variant="destructive" className="text-xs bg-red-600">
-                                  AT RISK
+                                  BERISIKO
                                 </Badge>
                               )}
                               <Badge variant="destructive" className="text-xs">
@@ -502,7 +530,7 @@ export default function DashboardIndex({
                             </div>
                             <div className="mt-3">
                               <div className="flex items-center justify-between text-sm mb-1">
-                                <span className="text-muted-foreground">Progress</span>
+                                <span className="text-muted-foreground">Kemajuan</span>
                                 <span className="font-medium">{project.progress_percentage || 0}%</span>
                               </div>
                               <Progress

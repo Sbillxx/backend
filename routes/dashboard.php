@@ -76,6 +76,12 @@ Route::middleware(['auth', 'share.team.data'])->group(function () {
         Route::post('/bugs/{bug}/convert', [ProjectBugController::class, 'convertToTask'])->name('dashboard.projects.bugs.convert');
         Route::delete('/bugs/{bug}', [ProjectBugController::class, 'destroy'])->name('dashboard.projects.bugs.destroy');
 
+        // Milestones
+        Route::post('/milestones', [\App\Http\Controllers\ProjectMilestoneController::class, 'store'])->name('dashboard.projects.milestones.store');
+        Route::put('/milestones/{milestone}', [\App\Http\Controllers\ProjectMilestoneController::class, 'update'])->name('dashboard.projects.milestones.update');
+        Route::patch('/milestones/{milestone}/status', [\App\Http\Controllers\ProjectMilestoneController::class, 'updateStatus'])->name('dashboard.projects.milestones.updateStatus');
+        Route::delete('/milestones/{milestone}', [\App\Http\Controllers\ProjectMilestoneController::class, 'destroy'])->name('dashboard.projects.milestones.destroy');
+
         // Reports
         Route::post('/reports', [\App\Http\Controllers\ProjectReportController::class, 'store'])->name('dashboard.projects.reports.store');
         Route::delete('/reports/{report}', [\App\Http\Controllers\ProjectReportController::class, 'destroy'])->name('dashboard.projects.reports.destroy');

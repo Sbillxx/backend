@@ -176,6 +176,8 @@ class ProjectController extends Controller
             'user_id' => 'required|exists:users,id',
             'team_id' => 'required|exists:teams,id',
             'opd_owner' => 'nullable|string|max:255',
+            'document_files' => 'nullable|array',
+            'document_files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240', // max 10MB
             'assigned_users' => 'array',
             'assigned_users.*' => 'exists:users,id',
         ]);
@@ -187,6 +189,30 @@ class ProjectController extends Controller
         Log::info('Assigned users to sync:', $assignedUsers);
 
         $project = Project::create($validated);
+
+        if ($request->hasFile('document_files')) {
+            $files = $request->file('document_files');
+            foreach ($files as $file) {
+                $fileName = $file->getClientOriginalName();
+                $path = $file->storeAs('projects/documents', time() . '_' . uniqid() . '_' . $fileName, 'public');
+                
+                \App\Models\ProjectDocument::create([
+                    'project_id' => $project->id,
+                    'file_name' => $fileName,
+                    'file_path' => $path,
+                ]);
+            }
+        } elseif ($request->hasFile('document_file')) {
+            $file = $request->file('document_file');
+            $fileName = $file->getClientOriginalName();
+            $path = $file->storeAs('projects/documents', time() . '_' . uniqid() . '_' . $fileName, 'public');
+            
+            \App\Models\ProjectDocument::create([
+                'project_id' => $project->id,
+                'file_name' => $fileName,
+                'file_path' => $path,
+            ]);
+        }
 
         // Sync assigned users
         $project->assignedUsers()->sync($assignedUsers);
@@ -221,9 +247,34 @@ class ProjectController extends Controller
             'user_id' => 'required|exists:users,id',
             'team_id' => $user->isAdmin() ? 'required|exists:teams,id' : 'sometimes',
             'opd_owner' => 'nullable|string|max:255',
+            'document_file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240',
             'assigned_users' => 'array',
             'assigned_users.*' => 'exists:users,id',
         ]);
+
+        if ($request->hasFile('document_files')) {
+            $files = $request->file('document_files');
+            foreach ($files as $file) {
+                $fileName = $file->getClientOriginalName();
+                $path = $file->storeAs('projects/documents', time() . '_' . uniqid() . '_' . $fileName, 'public');
+                
+                \App\Models\ProjectDocument::create([
+                    'project_id' => $project->id,
+                    'file_name' => $fileName,
+                    'file_path' => $path,
+                ]);
+            }
+        } elseif ($request->hasFile('document_file')) {
+            $file = $request->file('document_file');
+            $fileName = $file->getClientOriginalName();
+            $path = $file->storeAs('projects/documents', time() . '_' . uniqid() . '_' . $fileName, 'public');
+            
+            \App\Models\ProjectDocument::create([
+                'project_id' => $project->id,
+                'file_name' => $fileName,
+                'file_path' => $path,
+            ]);
+        }
 
         // Non-admin tidak bisa mengubah team
         if (!$user->isAdmin()) {
@@ -272,7 +323,8 @@ class ProjectController extends Controller
         $user->load('teams');
 
         // Load relasi dulu agar bisa mengecek assignedUsers
-        $project->load(['user', 'team', 'assignedUsers', 'tasks.assignedUser', 'bugs', 'reports.user']);
+        $project->load(['user', 'team', 'assignedUsers', 'tasks.assignedUser', 'bugs', 'reports.user', 'documents', 'milestones.tasks']);
+        $project->recalculateProgress();
 
         // Cek akses: admin, owner, assigned user, atau anggota team project
         $isOwner = $project->user_id === $user->id;
@@ -312,6 +364,25 @@ class ProjectController extends Controller
                 'due_date' => $project->due_date?->format('Y-m-d'),
                 'user' => $project->user,
                 'team' => $project->team,
+                'documents' => $project->documents->map(function($doc) {
+                    return [
+                        'id' => $doc->id,
+                        'name' => $doc->file_name,
+                        'url' => $doc->document_url,
+                    ];
+                }),
+                'milestones' => $project->milestones->map(function ($m) {
+                    return [
+                        'id' => $m->id,
+                        'title' => $m->title,
+                        'description' => $m->description,
+                        'due_date' => $m->due_date?->format('Y-m-d'),
+                        'status' => $m->status,
+                        'progress_percentage' => $m->progress_percentage,
+                        'completed_tasks_count' => $m->completed_tasks_count,
+                        'total_tasks_count' => $m->total_tasks_count,
+                    ];
+                }),
                 'assigned_users' => $project->assignedUsers,
                 'tasks' => $project->tasks->map(function ($task) {
                     return [
@@ -369,7 +440,7 @@ class ProjectController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $project->load(['assignedUsers']);
+        $project->load(['assignedUsers', 'documents']);
 
         $users = User::where('is_active', true)->get(['id', 'name', 'email']);
         $teams = $user->isAdmin() ? Team::where('is_active', true)->get(['id', 'name']) : $user->teams;
@@ -386,11 +457,64 @@ class ProjectController extends Controller
                 'user_id' => $project->user_id,
                 'team_id' => $project->team_id,
                 'opd_owner' => $project->opd_owner,
+                'documents' => $project->documents->map(function($doc) {
+                    return [
+                        'id' => $doc->id,
+                        'name' => $doc->file_name,
+                        'url' => $doc->document_url,
+                    ];
+                }),
                 'assigned_users' => $project->assignedUsers->pluck('id')->toArray(),
             ],
             'users' => $users,
             'teams' => $teams,
             'can_change_team' => $user->isAdmin(),
+        ]);
+    }
+
+    public function uploadDocuments(Request $request, $id)
+    {
+        $project = Project::findOrFail($id);
+
+        $request->validate([
+            'document_files' => 'required|array',
+            'document_files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:10240',
+        ]);
+
+        if ($request->hasFile('document_files')) {
+            $files = $request->file('document_files');
+            foreach ($files as $file) {
+                $fileName = $file->getClientOriginalName();
+                $path = $file->storeAs('projects/documents', time() . '_' . uniqid() . '_' . $fileName, 'public');
+                
+                \App\Models\ProjectDocument::create([
+                    'project_id' => $project->id,
+                    'file_name' => $fileName,
+                    'file_path' => $path,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Documents uploaded successfully.',
+        ], 201);
+    }
+
+    public function deleteDocument($projectId, $documentId)
+    {
+        $document = \App\Models\ProjectDocument::where('project_id', $projectId)
+            ->findOrFail($documentId);
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($document->file_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($document->file_path);
+        }
+
+        $document->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Document deleted successfully.',
         ]);
     }
 }

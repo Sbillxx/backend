@@ -48,12 +48,12 @@ export function AppSidebar({ data, ...props }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="cursor-default hover:bg-transparent select-none">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Building2 className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden bg-transparent">
+                <img src="/images/diskominfo.png" alt="Logo Diskominfo" className="w-full h-full object-contain" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold text-slate-800 dark:text-slate-100">Dasbor Staff</span>
-                <span className="truncate text-xs text-muted-foreground">Kominfo</span>
+                <span className="truncate font-semibold text-slate-800 dark:text-slate-100">Dasbor Proyek KP</span>
+                <span className="truncate text-xs text-muted-foreground">Diskominfo</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

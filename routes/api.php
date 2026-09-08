@@ -27,7 +27,12 @@ Route::get('/projects/{id}', [ProjectController::class, 'show']);
 Route::post('/projects', [ProjectController::class, 'store']);
 Route::post('/projects/{id}', [ProjectController::class, 'update']);
 Route::delete('/projects/{id}', [ProjectController::class, 'destroy']);
-
+Route::post('/projects/{id}/documents', [ProjectController::class, 'uploadDocuments']);
+Route::delete('/projects/{projectId}/documents/{documentId}', [ProjectController::class, 'deleteDocument']);
+Route::get('/projects/{id}/milestones', [ProjectController::class, 'getMilestones']);
+Route::post('/projects/{id}/milestones', [ProjectController::class, 'storeMilestone']);
+Route::post('/projects/{id}/milestones/{milestoneId}', [ProjectController::class, 'updateMilestone']);
+Route::delete('/projects/{id}/milestones/{milestoneId}', [ProjectController::class, 'deleteMilestone']);
 // Reports endpoints
 Route::get('/reports', [ReportController::class, 'index']);
 
